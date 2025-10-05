@@ -4,7 +4,7 @@ const fetch = require("node-fetch");
 const path = require("path");
 
 const app = express();
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT || 2929
 
 // If DEBUG_PROXY is set, the server will include error stacks in responses
 // and more verbose console logging. Do NOT enable in public production.
@@ -76,7 +76,19 @@ app.get("/*", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// Start the server
-app.listen(PORT, () => {
+// Start the server with improved error handling
+const server = app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
+});
+
+// More helpful error handling for common startup errors
+server.on('error', (err) => {
+  if (err && err.code === 'EADDRINUSE') {
+    console.error(`Port ${PORT} is already in use. (EADDRINUSE)`);
+    console.error('Find the process using the port with: lsof -i :' + PORT + '  (or: ss -ltnp | grep :' + PORT + ')');
+    console.error('Then stop it (for example): kill <pid>  or  kill -9 <pid>');
+    process.exit(1);
+  }
+  console.error('Server error on startup:', err && err.stack ? err.stack : err);
+  process.exit(1);
 });
