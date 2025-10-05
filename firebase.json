@@ -8,16 +8,9 @@
     ],
     "rewrites": [
       {
-        "source": "/proxy",
-        "function": "proxy"
-      },
-      {
-        "source": "/proxy/**",
-        "function": "proxy"
+        "source": "**",
+        "destination": "/index.html"
       }
     ]
-  },
-  "functions": {
-    "source": "functions"
-  }
+  }  
 }

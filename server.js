@@ -6,6 +6,10 @@ const path = require("path");
 const app = express();
 const PORT = process.env.PORT || 4000;
 
+// If DEBUG_PROXY is set, the server will include error stacks in responses
+// and more verbose console logging. Do NOT enable in public production.
+const DEBUG_PROXY = process.env.DEBUG_PROXY === '1';
+
 app.use(cors());
 
 // Serve static files with cache headers
@@ -38,16 +42,32 @@ app.get("/proxy", async (req, res) => {
 
   try {
     const response = await fetch(url);
+    console.log(`[proxy] fetched ${url} -> ${response.status} ${response.statusText}`);
     if (!response.ok) {
-      throw new Error(`HTTP Error ${response.statusText}`);
+      const text = await response.text().catch(() => '<non-text body>');
+      console.error('[proxy] upstream non-ok:', response.status, text);
+      return res.status(502).send('Upstream fetch returned ' + response.status);
     }
 
-    const data = await response.blob();
-    res.type(data.type);
-    res.send(Buffer.from(await data.arrayBuffer()));
+    // Try to stream response body if available
+    try {
+      const data = await response.blob();
+      res.type(data.type || 'text/plain');
+      res.send(Buffer.from(await data.arrayBuffer()));
+    } catch (streamErr) {
+      console.error('[proxy] error streaming upstream body:', streamErr);
+      if (DEBUG_PROXY) {
+        return res.status(500).send('Proxy error: ' + (streamErr && streamErr.stack ? streamErr.stack : String(streamErr)));
+      }
+      return res.status(500).send('Proxy error');
+    }
   } catch (error) {
-    console.error("Error fetching iCal feed: ", error);
-    res.status(500).send("Failed to fetch iCal feed: " + error);
+    console.error("Error fetching iCal feed: ", error && error.stack ? error.stack : error);
+    if (DEBUG_PROXY) {
+      res.status(500).send("Failed to fetch iCal feed: " + (error && error.stack ? error.stack : String(error)));
+    } else {
+      res.status(500).send("Proxy error");
+    }
   }
 });
 
