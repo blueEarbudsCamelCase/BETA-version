@@ -61,17 +61,39 @@
       style="height: calc(100vh - 20px - 13rem)">
       <div class="flex flex-col lg:flex-row gap-8 h-full flex-grow mt-4 min-h-0">
         <!-- Iframe Section -->
+
+
         <div class="bookings-iframe-container bg-white shadow-2xl rounded-2xl p-8 flex-1 min-h-0 flex flex-col">
+
           <div class="flex items-center justify-between mb-4">
-            <h3 class="text-xl font-bold">Book a Tutorial:</h3>
-            <button id="addTutorialBtn" title="Add Tutorial" aria-label="Add Tutorial"
-              class="bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center ml-2 text-lg font-bold">+</button>
+            <div class="flex items-center space-x-6">
+              <h3 class="text-xl" data-target="#bookingsContent" role="button" tabindex="0">Book a Tutorial</h3>
+              <h3 class="text-xl" data-target="#scheduleContent" role="button" tabindex="0">Schedule</h3>
+            </div>
+            <button id="addTutorialBtn" title="Add Tutorial" aria-label="Add Tutorial" class="bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-lg font-bold">+</button>
           </div>
-          <iframe id="bookingsIframe"
-            src="https://outlook.office.com/book/Grade910TutorialsCopy@na.oneschoolglobal.com/?ismsaljsauthenabled"
-            class="w-full h-full rounded-xl flex-1" scrolling='yes' title="Book a Tutorial"
-            aria-label="Book a Tutorial">
-          </iframe>
+
+
+          <div id="bookingsContent" class="flex-1 min-h-0">
+            <iframe id="bookingsIframe"
+              src="https://outlook.office.com/book/Grade910TutorialsCopy@na.oneschoolglobal.com/?ismsaljsauthenabled"
+              class="w-full h-full rounded-xl flex-1" scrolling='yes' title="Book a Tutorial"
+              aria-label="Book a Tutorial">
+            </iframe>
+          </div>
+
+          <div id="scheduleContent" class="hidden flex-1 min-h-0">
+            <div id="scheduleFormPanel">
+              <div id="scheduleDisplaySection" class="hidden min-h-screen flex flex-col items-center justify-center p-8">
+                <p>this is a placeholder for the schedule display. </p>
+              </div>
+            </div>
+            <div id="scheduleDisplayPanel" class="hidden">
+              <p>this is a placeholder for the schedule display. </p>
+            </div>
+          </div>
+
+
         </div>
 
         <!-- Tasks Section -->

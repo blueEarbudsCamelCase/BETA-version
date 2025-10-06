@@ -1320,6 +1320,68 @@ document.addEventListener("DOMContentLoaded", () => {
   renderDashboardTasks();
   loadStudyTasks();
 
+  // Make the left headings act like tabs (clickable)
+  (function () {
+    const KEY = "activeLeftTab";
+    const headings = document.querySelectorAll("[data-target='#bookingsContent'], [data-target='#scheduleContent']");
+    const panels = { bookings: document.getElementById("bookingsContent"), schedule: document.getElementById("scheduleContent") };
+    const addTutorialBtn = document.getElementById("addTutorialBtn");
+
+    function showScheduleFormAlways() {
+      // For now always show the schedule form when Schedule is clicked.
+      // In future this can check localStorage for an existing schedule and show the display instead.
+      const formPanel = document.getElementById("scheduleFormPanel");
+      const displayPanel = document.getElementById("scheduleDisplayPanel");
+      if (formPanel) formPanel.classList.remove("hidden");
+      if (displayPanel) displayPanel.classList.add("hidden");
+    }
+
+    function setActive(targetSelector, persist = true) {
+      // show/hide main panels
+      Object.values(panels).forEach((el) => el && el.classList.add("hidden"));
+      const target = document.querySelector(targetSelector);
+      if (target) target.classList.remove("hidden");
+
+      // If schedule panel selected, decide whether to show form or display
+      if (targetSelector === "#scheduleContent") {
+        // Always show the schedule form for now
+        showScheduleFormAlways();
+        // hide add tutorial when schedule is active
+        if (addTutorialBtn) addTutorialBtn.classList.add("hidden");
+      } else {
+        if (addTutorialBtn) addTutorialBtn.classList.remove("hidden");
+      }
+
+      // visual active state on headings: selected = black & bold; unselected = gray & normal weight
+      headings.forEach((h) => {
+        // ensure consistent font size
+        h.classList.add("text-xl");
+        // remove previous color/weight classes we control
+        h.classList.remove("text-gray-500", "text-black", "font-bold");
+        if (h.dataset.target === targetSelector) {
+          // active
+          h.classList.add("text-black", "font-bold");
+        } else {
+          // inactive
+          h.classList.add("text-gray-500");
+        }
+      });
+
+      // persist
+      if (persist) localStorage.setItem(KEY, targetSelector);
+    }
+
+    headings.forEach((h) => {
+      h.addEventListener("click", () => setActive(h.dataset.target, true));
+      h.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") setActive(h.dataset.target, true);
+      });
+    });
+
+    const persisted = localStorage.getItem(KEY) || "#bookingsContent";
+    setActive(persisted, false);
+  })();
+
   // Custom teacher dropdown logic
   const teacherInput = document.getElementById("tutorialTeacher");
   const teacherDropdown = document.getElementById("teacherDropdown");
