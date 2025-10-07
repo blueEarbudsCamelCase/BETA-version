@@ -1320,6 +1320,100 @@ document.addEventListener("DOMContentLoaded", () => {
   renderDashboardTasks();
   loadStudyTasks();
 
+  // Schedule form functionality
+  function saveScheduleData() {
+    const scheduleInputs = document.querySelectorAll('.schedule-input');
+    const scheduleData = {};
+    
+    scheduleInputs.forEach(input => {
+      if (input.value.trim()) {
+        scheduleData[input.name] = input.value.trim();
+      }
+    });
+    
+    localStorage.setItem("userSchedule", JSON.stringify(scheduleData));
+    console.log("Schedule saved:", scheduleData);
+    
+    // Switch to display panel
+    const formPanel = document.getElementById("scheduleFormPanel");
+    const displayPanel = document.getElementById("scheduleDisplayPanel");
+    
+    if (formPanel) formPanel.classList.add("hidden");
+    if (displayPanel) {
+      displayPanel.classList.remove("hidden");
+      displaySavedSchedule();
+    }
+  }
+
+  function displaySavedSchedule() {
+    const savedSchedule = localStorage.getItem("userSchedule");
+    const displayPanel = document.getElementById("scheduleDisplayPanel");
+    
+    if (!savedSchedule || !displayPanel) return;
+    
+    const scheduleData = JSON.parse(savedSchedule);
+    
+    // Create schedule table HTML
+    let scheduleHTML = `
+      <table class="w-full table-auto">
+        <thead>
+          <tr>
+            <th class="text-left py-2"></th>
+            <th class="text-left py-2">Monday</th>
+            <th class="text-left py-2">Tuesday</th>
+            <th class="text-left py-2">Wednesday</th>
+            <th class="text-left py-2">Thursday</th>
+            <th class="text-left py-2">Friday</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+    
+    // Define periods and their corresponding input names
+    const periods = [
+      { period: 'P4', inputs: ['period4Monday', 'period4Tuesday', 'period4Wednesday', 'period4Thursday', 'period4Friday'] },
+      { period: 'P5', inputs: ['period5Monday', 'period5Tuesday', 'period5Wednesday', 'period5Thursday', 'period5Friday'] },
+      { period: 'P6', inputs: ['period6Monday', 'period6Tuesday', 'period6Wednesday', 'period6Thursday', 'period6Friday'] },
+      { period: 'P7', inputs: ['period7Monday', 'period7Tuesday', 'period7Wednesday', 'period7Thursday', 'period7Friday'] },
+      { period: 'P8', inputs: ['period8Monday', 'period8Tuesday', 'period8Wednesday', 'period8Thursday', 'period8Friday'] }
+    ];
+    
+    periods.forEach(periodData => {
+      scheduleHTML += `<tr><td class="py-2 font-semibold">${periodData.period}</td>`;
+      
+      periodData.inputs.forEach(inputName => {
+        const className = scheduleData[inputName] || '';
+        scheduleHTML += `<td class="py-2 px-2 bg-gray-100 rounded">${className}</td>`;
+      });
+      
+      scheduleHTML += '</tr>';
+    });
+    
+    scheduleHTML += `
+        </tbody>
+      </table>
+    `;
+    
+    displayPanel.innerHTML = scheduleHTML;
+  }
+
+  // Add Enter key listeners to schedule inputs
+  function addScheduleInputListeners() {
+    const scheduleInputs = document.querySelectorAll('.schedule-input');
+    
+    scheduleInputs.forEach(input => {
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          saveScheduleData();
+        }
+      });
+    });
+  }
+
+  // Initialize schedule functionality
+  addScheduleInputListeners();
+
   // Make the left headings act like tabs (clickable)
   (function () {
     const KEY = "activeLeftTab";
@@ -1327,13 +1421,45 @@ document.addEventListener("DOMContentLoaded", () => {
     const panels = { bookings: document.getElementById("bookingsContent"), schedule: document.getElementById("scheduleContent") };
     const addTutorialBtn = document.getElementById("addTutorialBtn");
 
-    function showScheduleFormAlways() {
-      // For now always show the schedule form when Schedule is clicked.
-      // In future this can check localStorage for an existing schedule and show the display instead.
+    function showScheduleContent() {
+      // Check if schedule exists in localStorage
+      const savedSchedule = localStorage.getItem("userSchedule");
       const formPanel = document.getElementById("scheduleFormPanel");
       const displayPanel = document.getElementById("scheduleDisplayPanel");
+      
+      if (savedSchedule) {
+        // Show display panel if schedule exists
+        if (formPanel) formPanel.classList.add("hidden");
+        if (displayPanel) {
+          displayPanel.classList.remove("hidden");
+          displaySavedSchedule();
+        }
+      } else {
+        // Show form panel if no schedule exists
+        if (formPanel) formPanel.classList.remove("hidden");
+        if (displayPanel) displayPanel.classList.add("hidden");
+      }
+    }
+
+    function showScheduleForm() {
+      // Always show form panel and pre-fill with saved data
+      const formPanel = document.getElementById("scheduleFormPanel");
+      const displayPanel = document.getElementById("scheduleDisplayPanel");
+      const savedSchedule = localStorage.getItem("userSchedule");
+      
       if (formPanel) formPanel.classList.remove("hidden");
       if (displayPanel) displayPanel.classList.add("hidden");
+      
+      // Pre-fill form with saved data if it exists
+      if (savedSchedule) {
+        const scheduleData = JSON.parse(savedSchedule);
+        Object.keys(scheduleData).forEach(inputName => {
+          const input = document.querySelector(`[name="${inputName}"]`);
+          if (input) {
+            input.value = scheduleData[inputName];
+          }
+        });
+      }
     }
 
     function setActive(targetSelector, persist = true) {
@@ -1344,8 +1470,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // If schedule panel selected, decide whether to show form or display
       if (targetSelector === "#scheduleContent") {
-        // Always show the schedule form for now
-        showScheduleFormAlways();
+        // Show display if schedule exists, form if not
+        showScheduleContent();
         // hide add tutorial when schedule is active
         if (addTutorialBtn) addTutorialBtn.classList.add("hidden");
       } else {
