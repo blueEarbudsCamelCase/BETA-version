@@ -1321,6 +1321,45 @@ document.addEventListener("DOMContentLoaded", () => {
   loadStudyTasks();
 
   // Schedule form functionality
+  function getPeriodLabels() {
+    // Get the user's timezone
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    
+    // Map timezones to period numbers
+    const timezonePeriods = {
+      // Pacific Time (PST/PDT)
+      'America/Los_Angeles': [4, 5, 6, 7, 8],
+      'America/Vancouver': [4, 5, 6, 7, 8],
+      
+      // Mountain Time (MST/MDT)
+      'America/Denver': [4, 5, 6, 7, 8],
+      'America/Phoenix': [4, 5, 6, 7, 8],
+      'America/Edmonton': [4, 5, 6, 7, 8],
+      
+      // Central Time (CST/CDT)
+      'America/Chicago': [3, 4, 5, 6, 7],
+      'America/Mexico_City': [3, 4, 5, 6, 7],
+      'America/Winnipeg': [3, 4, 5, 6, 7],
+      
+      // Eastern Time (EST/EDT)
+      'America/New_York': [2, 3, 4, 5, 6],
+      'America/Toronto': [2, 3, 4, 5, 6],
+      'America/Montreal': [2, 3, 4, 5, 6],
+      
+      // Atlantic Time
+      'America/Halifax': [2, 3, 4, 5, 6],
+      
+      // Default fallback (Pacific Time)
+      'default': [4, 5, 6, 7, 8]
+    };
+    
+    // Get periods for the timezone, fallback to default if not found
+    const periods = timezonePeriods[timezone] || timezonePeriods['default'];
+    
+    // Convert to period labels
+    return periods.map(period => `P${period}`);
+  }
+
   function saveScheduleData() {
     const scheduleInputs = document.querySelectorAll('.schedule-input');
     const scheduleData = {};
@@ -1372,13 +1411,16 @@ document.addEventListener("DOMContentLoaded", () => {
               <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
     `;
     
+    // Get dynamic period labels based on timezone
+    const periodLabels = getPeriodLabels();
+    
     // Define periods and their corresponding input names
     const periods = [
-      { period: 'P4', inputs: ['period4Monday', 'period4Tuesday', 'period4Wednesday', 'period4Thursday', 'period4Friday'] },
-      { period: 'P5', inputs: ['period5Monday', 'period5Tuesday', 'period5Wednesday', 'period5Thursday', 'period5Friday'] },
-      { period: 'P6', inputs: ['period6Monday', 'period6Tuesday', 'period6Wednesday', 'period6Thursday', 'period6Friday'] },
-      { period: 'P7', inputs: ['period7Monday', 'period7Tuesday', 'period7Wednesday', 'period7Thursday', 'period7Friday'] },
-      { period: 'P8', inputs: ['period8Monday', 'period8Tuesday', 'period8Wednesday', 'period8Thursday', 'period8Friday'] }
+      { period: periodLabels[0], inputs: ['period4Monday', 'period4Tuesday', 'period4Wednesday', 'period4Thursday', 'period4Friday'] },
+      { period: periodLabels[1], inputs: ['period5Monday', 'period5Tuesday', 'period5Wednesday', 'period5Thursday', 'period5Friday'] },
+      { period: periodLabels[2], inputs: ['period6Monday', 'period6Tuesday', 'period6Wednesday', 'period6Thursday', 'period6Friday'] },
+      { period: periodLabels[3], inputs: ['period7Monday', 'period7Tuesday', 'period7Wednesday', 'period7Thursday', 'period7Friday'] },
+      { period: periodLabels[4], inputs: ['period8Monday', 'period8Tuesday', 'period8Wednesday', 'period8Thursday', 'period8Friday'] }
     ];
     
     periods.forEach((periodData, index) => {
@@ -1433,8 +1475,21 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Update HTML form with dynamic period labels
+  function updateScheduleFormLabels() {
+    const periodLabels = getPeriodLabels();
+    const periodCells = document.querySelectorAll('#scheduleFormPanel tbody tr td:first-child');
+    
+    periodCells.forEach((cell, index) => {
+      if (index < periodLabels.length) {
+        cell.textContent = periodLabels[index];
+      }
+    });
+  }
+
   // Initialize schedule functionality
   addScheduleInputListeners();
+  updateScheduleFormLabels();
 
   // Make the left headings act like tabs (clickable)
   (function () {
