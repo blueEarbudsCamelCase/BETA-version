@@ -1353,20 +1353,23 @@ document.addEventListener("DOMContentLoaded", () => {
     
     const scheduleData = JSON.parse(savedSchedule);
     
-    // Create schedule table HTML
+    // Create schedule table HTML with full height and beautiful styling
     let scheduleHTML = `
-      <table class="w-full table-auto">
-        <thead>
-          <tr>
-            <th class="text-left py-2"></th>
-            <th class="text-left py-2">Monday</th>
-            <th class="text-left py-2">Tuesday</th>
-            <th class="text-left py-2">Wednesday</th>
-            <th class="text-left py-2">Thursday</th>
-            <th class="text-left py-2">Friday</th>
-          </tr>
-        </thead>
-        <tbody>
+      <div class="h-full flex flex-col">        
+        <div class="flex-1 overflow-hidden">
+          <div class="h-full bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-600 overflow-hidden">
+            <table class="w-full h-full table-fixed">
+              <thead class="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
+                <tr class="h-16">
+                  <th class="w-20 text-center font-bold text-lg border-r border-blue-400">Period</th>
+                  <th class="text-center font-bold text-lg border-r border-blue-400">Monday</th>
+                  <th class="text-center font-bold text-lg border-r border-blue-400">Tuesday</th>
+                  <th class="text-center font-bold text-lg border-r border-blue-400">Wednesday</th>
+                  <th class="text-center font-bold text-lg border-r border-blue-400">Thursday</th>
+                  <th class="text-center font-bold text-lg">Friday</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
     `;
     
     // Define periods and their corresponding input names
@@ -1378,20 +1381,39 @@ document.addEventListener("DOMContentLoaded", () => {
       { period: 'P8', inputs: ['period8Monday', 'period8Tuesday', 'period8Wednesday', 'period8Thursday', 'period8Friday'] }
     ];
     
-    periods.forEach(periodData => {
-      scheduleHTML += `<tr><td class="py-2 font-semibold">${periodData.period}</td>`;
+    periods.forEach((periodData, index) => {
+      const rowHeight = 'h-20'; // Fixed height for each row
+      const isEvenRow = index % 2 === 0;
       
-      periodData.inputs.forEach(inputName => {
+      scheduleHTML += `
+        <tr class="${rowHeight} schedule-row ${isEvenRow ? 'schedule-row-even' : 'schedule-row-odd'}">
+          <td class="w-20 text-center font-bold text-lg schedule-period border-r schedule-border align-middle">
+            ${periodData.period}
+          </td>
+      `;
+      
+      periodData.inputs.forEach((inputName, dayIndex) => {
         const className = scheduleData[inputName] || '';
-        scheduleHTML += `<td class="py-2 px-2 bg-gray-100 rounded">${className}</td>`;
+        const isEmpty = !className.trim();
+        const textClass = isEmpty ? 'schedule-empty' : 'schedule-filled';
+        const borderClass = dayIndex < 4 ? 'border-r schedule-border' : '';
+        
+        scheduleHTML += `
+          <td class="text-center ${textClass} ${borderClass} align-middle px-4 py-4">
+            <span class="truncate block">${isEmpty ? 'Free Period' : className}</span>
+          </td>
+        `;
       });
       
       scheduleHTML += '</tr>';
     });
     
     scheduleHTML += `
-        </tbody>
-      </table>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     `;
     
     displayPanel.innerHTML = scheduleHTML;
