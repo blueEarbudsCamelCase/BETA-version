@@ -1028,9 +1028,6 @@ function updateRunScreenDisplay(taskIndex) {
           if (stillIncomplete.length === 0) {
             clearInterval(timerInterval);
             baseTimer.querySelector("#base-timer-label").textContent = "00:00";
-            alert(
-              "You finished your study! Click exit to go back to the planning screen."
-            );
           } else {
             const nextTaskIndex = runSessionTasks.findIndex(
               (task) => !task.completed
@@ -1300,13 +1297,7 @@ document.addEventListener("DOMContentLoaded", () => {
     refreshStudyTasksBtn.onclick = () => {
       refreshStudyTasksBtn.classList.add("fa-spin");
 
-      // Clear the study plan display
-      const studyPlanDisplay = document.getElementById("studyPlanDisplay");
-      if (studyPlanDisplay) {
-        studyPlanDisplay.innerHTML = '<p class="text-gray-500 italic">No tasks scheduled yet.</p>';
-        updateMinutesLeftDisplay();
-      }
-      
+
       fetchIcalFeed()
         .then(() => {
           loadStudyTasks();
@@ -1321,6 +1312,11 @@ document.addEventListener("DOMContentLoaded", () => {
             500
           );
         });
+        const studyPlanDisplay = document.getElementById("studyPlanDisplay");
+      if (studyPlanDisplay) {
+        studyPlanDisplay.innerHTML = '<p class="text-gray-500 italic">No tasks scheduled yet.</p>';
+        updateMinutesLeftDisplay();
+      }
     };
   }
 
