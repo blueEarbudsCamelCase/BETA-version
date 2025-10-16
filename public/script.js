@@ -564,7 +564,14 @@ function addToAgenda(task, estimatedTime, zone, priority = false) {
   studyPlanDisplay.appendChild(agendaItem);
 
   runButtonColorCheck();
-  updateMinutesLeftDisplay(); // <-- Add this line
+  updateMinutesLeftDisplay();
+
+  // Persist the current planner if opened for a particular schedule slot
+  try {
+    saveCurrentSlotPlans();
+  } catch (err) {
+    console.error("[studyPlans] saveCurrentSlotPlans error:", err);
+  }
 }
 
 // Utility to get all tasks (ical + custom)
@@ -1107,6 +1114,199 @@ if (pipButton) {
     });
   }
 }
+// --- Added: per-slot study plan persistence & schedule cell handlers ---
+
+// Helper: build slot key from period label and day name
+function getSlotKey(periodLabel, dayName) {
+  return `${periodLabel} - ${dayName}`;
+}
+
+// Load whole studyPlans object from localStorage
+function loadAllStudyPlans() {
+  return JSON.parse(localStorage.getItem("studyPlans") || "{}");
+}
+
+// Save whole studyPlans object to localStorage
+function saveAllStudyPlans(plansObj) {
+  localStorage.setItem("studyPlans", JSON.stringify(plansObj));
+}
+
+// Clear all saved study plans if today is Sunday
+function clearPlansIfSunday() {
+  try {
+    const today = new Date();
+    if (today.getDay() === 0) {
+      // It's Sunday (0), clear saved plans
+      localStorage.removeItem("studyPlans");
+      console.debug("[studyPlans] Cleared studyPlans on Sunday.");
+    }
+  } catch (err) {
+    console.error("[studyPlans] clearPlansIfSunday error:", err);
+  }
+}
+
+// Render an array of saved tasks into the studyPlanDisplay
+function renderStudyPlanFromArray(tasksArray) {
+  const studyPlanDisplay = document.getElementById("studyPlanDisplay");
+  if (!studyPlanDisplay) return;
+
+  // Reset placeholder/contents
+  studyPlanDisplay.innerHTML = "";
+
+  if (!Array.isArray(tasksArray) || tasksArray.length === 0) {
+    studyPlanDisplay.innerHTML =
+      '<p class="text-gray-500 italic">No tasks scheduled yet.</p>';
+    updateMinutesLeftDisplay();
+    runButtonColorCheck();
+    return;
+  }
+
+  // For each saved task, recreate the DOM node similarly to addToAgenda
+  tasksArray.forEach((task) => {
+    const agendaItem = document.createElement("div");
+    agendaItem.className = "p-2 mb-2 rounded text-white";
+    agendaItem.dataset.startDate = task.startDate || new Date().toISOString();
+    agendaItem.dataset.estimatedTime = task.estimatedTime || 0;
+    agendaItem.dataset.endTime = task.endTime || "";
+    agendaItem.dataset.zone = task.zone || "";
+    agendaItem.dataset.priority = task.priority ? "true" : "false";
+    if (task.priority) agendaItem.classList.add("priority-task");
+
+    const estimatedTime = parseInt(agendaItem.dataset.estimatedTime, 10) || 0;
+    // Use same proportional sizing as addToAgenda
+    const totalMinutes = 63;
+    const percentage = (estimatedTime / totalMinutes) * 100;
+    agendaItem.style.flex = `0 0 ${percentage}%`;
+
+    switch (agendaItem.dataset.zone) {
+      case "Independent":
+        agendaItem.style.backgroundColor = "#3182ce";
+        break;
+      case "Semi-Collaborative":
+        agendaItem.style.backgroundColor = "#38a169";
+        break;
+      case "Collaborative":
+        agendaItem.style.backgroundColor = "#e53e3e";
+        break;
+      default:
+        agendaItem.style.backgroundColor = "#718096";
+    }
+
+    const priorityMark = task.priority ? `<span class="priority-star">★</span>` : "";
+
+    agendaItem.innerHTML = `
+      <span>${priorityMark}${task.summary || "Unnamed Task"} - ${estimatedTime} min.</span>
+      <span class="text-sm text-gray-200">${(task.startTimeDisplay || "")} ${task.endTimeDisplay || ""}</span>
+    `;
+
+    studyPlanDisplay.appendChild(agendaItem);
+  });
+
+  runButtonColorCheck();
+  updateMinutesLeftDisplay();
+}
+
+// Load and render study plan for a slot (periodLabel, dayName)
+function loadStudyPlanForSlot(periodLabel, dayName) {
+  const plans = loadAllStudyPlans();
+  const slotKey = getSlotKey(periodLabel, dayName);
+  const tasks = plans[slotKey] || [];
+  renderStudyPlanFromArray(tasks);
+}
+
+// Save current DOM study plan into the active slot
+function saveCurrentSlotPlans() {
+  const studyPlanDisplay = document.getElementById("studyPlanDisplay");
+  const studyPlannerSection = document.getElementById("studyPlannerSection");
+  if (!studyPlanDisplay || !studyPlannerSection) return;
+  const slotKey = studyPlannerSection.dataset.slotKey;
+  if (!slotKey) return; // nothing to save if no active slot
+
+  const tasks = Array.from(studyPlanDisplay.children).map((child) => ({
+    summary: (child.textContent || "").split(" - ")[0].trim(),
+    estimatedTime: parseInt(child.dataset.estimatedTime, 10) || 0,
+    zone: child.dataset.zone || "",
+    priority: child.dataset.priority === "true",
+    startDate: child.dataset.startDate || new Date().toISOString(),
+    endTime: child.dataset.endTime || "",
+  }));
+
+  const plans = loadAllStudyPlans();
+  plans[slotKey] = tasks;
+  saveAllStudyPlans(plans);
+  console.debug(`[studyPlans] Saved ${tasks.length} tasks for slot: ${slotKey}`);
+}
+
+// Attach click handlers to the schedule display/form table cells so they open planner
+function attachScheduleCellHandlers() {
+  // Map column index to weekday names (Monday..Friday)
+  const weekdayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+
+  // Look in display panel first
+  const displayPanel = document.getElementById("scheduleDisplayPanel");
+  const formPanel = document.getElementById("scheduleFormPanel");
+  [displayPanel, formPanel].forEach((panel) => {
+    if (!panel) return;
+    const table = panel.querySelector("table");
+    if (!table) return;
+
+    // Add pointer cursor styling
+    table.querySelectorAll("td").forEach((td) => {
+      td.style.cursor = td.cellIndex === 0 ? "default" : "pointer";
+    });
+
+    // Attach click to each non-first-column cell
+    table.querySelectorAll("tbody tr").forEach((row) => {
+      const periodLabelCell = row.querySelector("td:first-child");
+      const periodLabel = periodLabelCell ? periodLabelCell.textContent.trim() : null;
+      row.querySelectorAll("td").forEach((cell, idx) => {
+        // skip first column (period label)
+        if (idx === 0) return;
+        const dayName = weekdayNames[idx - 1] || `Col${idx}`;
+        cell.addEventListener("click", () => {
+          if (!periodLabel) return;
+          openStudyPlannerForSlot(periodLabel, dayName);
+        });
+
+        // improve accessibility: allow Enter key to open
+        cell.tabIndex = 0;
+        cell.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            if (!periodLabel) return;
+            openStudyPlannerForSlot(periodLabel, dayName);
+          }
+        });
+      });
+    });
+  });
+}
+
+// Open the study planner for a specific slot, load its saved plan, and set active slot
+function openStudyPlannerForSlot(periodLabel, dayName) {
+  const dashboardSection = document.getElementById("dashboardSection");
+  const studyScreen = document.getElementById("studyPlannerSection");
+  if (!studyScreen || !dashboardSection) return;
+
+  // Hide dashboard, show planner
+  dashboardSection.classList.add("hidden");
+  studyScreen.classList.remove("hidden");
+
+  // Annotate the planner with the active slot key
+  const slotKey = getSlotKey(periodLabel, dayName);
+  studyScreen.dataset.slotKey = slotKey;
+
+  // Update the planner header to show which slot is being planned
+  const titleEl = studyScreen.querySelector("h1");
+  if (titleEl) {
+    titleEl.textContent = `Study Session — ${periodLabel} (${dayName})`;
+  }
+
+  // Load saved plan for the slot
+  loadStudyPlanForSlot(periodLabel, dayName);
+  updateMinutesLeftDisplay();
+}
+
 function updateMinutesLeftDisplay() {
   const studyPlanDisplay = document.getElementById("studyPlanDisplay");
   const minutesLeftDisplay = document.getElementById("minutesLeftDisplay");
@@ -1322,10 +1522,34 @@ document.addEventListener("DOMContentLoaded", () => {
     };
   }
 
+  // Hide the old Start button — scheduling replaces it
+  if (startStudyBtn) {
+    startStudyBtn.classList.add("hidden");
+  }
+
+  // Clear saved plans on Sunday
+  clearPlansIfSunday();
+
+  // Hide the old Start button — scheduling replaces it
+  if (startStudyBtn) {
+    startStudyBtn.classList.add("hidden");
+  }
+
+  // Clear saved plans on Sunday
+  clearPlansIfSunday();
+
   // Initial dashboard render
   renderDashboardTasks();
   loadStudyTasks();
   updateMinutesLeftDisplay(); // Initialize the minutes display
+
+  // Ensure schedule form labels updated and then attach cell handlers (so they open planner)
+  updateScheduleFormLabels();
+  attachScheduleCellHandlers();
+
+  // Ensure schedule form labels updated and then attach cell handlers (so they open planner)
+  updateScheduleFormLabels();
+  attachScheduleCellHandlers();
 
   // Schedule form functionality
   function getPeriodLabels() {
@@ -1859,17 +2083,6 @@ const teacherList = [
   "Zakk Taylor",
   "Zaleena Esahack",
 ];
-
-
-// Add MAP Practice button event listener
-document.addEventListener("DOMContentLoaded", () => {
-  const mapButton = document.getElementById("mapButton");
-  if (mapButton) {
-    mapButton.addEventListener("click", () => {
-      openMapPopup();
-    });
-  }
-});
 
 function openMapPopup() {
   const mapPopup = document.getElementById("mapPopup");
