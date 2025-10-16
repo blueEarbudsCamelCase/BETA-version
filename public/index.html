@@ -67,8 +67,8 @@
 
           <div class="flex items-center justify-between mb-4">
             <div class="flex items-center space-x-6">
-              <h3 class="text-xl" data-target="#bookingsContent" role="button" tabindex="0">Book a Tutorial</h3>
               <h3 class="text-xl" data-target="#scheduleContent" role="button" tabindex="0">Schedule</h3>
+              <h3 class="text-xl" data-target="#bookingsContent" role="button" tabindex="0">Book a Tutorial</h3>
             </div>
             <button id="addTutorialBtn" title="Add Tutorial" aria-label="Add Tutorial" class="bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-lg font-bold">+</button>
           </div>
@@ -141,6 +141,7 @@
                     </tbody>
                   </table>
                 </form>
+                <button id="saveScheduleBtn" type="button" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Save Schedule</button>
             </div>
             <div id="scheduleDisplayPanel" class="hidden">
               <p>this is a placeholder for the schedule display. </p>
@@ -215,7 +216,7 @@
   <!-- === Study Planner Section === -->
   <section id="studyPlannerSection" class="hidden p-6 container">
     <h1 class="text-2xl font-bold mb-4 flex items-center justify-between">
-      Study Session
+      <span class="session-title">Study</span>
       <button id="refreshStudyTasksBtn" title="Refresh Study Tasks" aria-label="Refresh Study Tasks"
         class="bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center ml-2 text-lg font-bold">
         <span style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;">
