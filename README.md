@@ -14,4 +14,5 @@ If you deploy the proxy to Render, you can temporarily enable verbose
 proxy debugging by setting the environment variable `DEBUG_PROXY=1` on the
 service. This makes the server include stack traces in responses and logs
 so you can debug 500 errors. Turn it off when done.
+
 # BETA-version
