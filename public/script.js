@@ -1,5 +1,24 @@
-const dashboardSection = document.getElementById("dashboardSection");
-const scheduleSetupSection = document.getElementById("scheduleSetupSection");
+//function to check if user has seen the update notice.
+//if there is an update, change the value of update to 1.
+let update = 1; // Simulated update flag
+const updatePopup = document.getElementById("updatePopup");
+const closeUpdateBtn = document.getElementById("closeUpdateBtn");
+
+closeUpdateBtn.addEventListener("click", () => {
+  updatePopup.classList.add("hidden");
+  localStorage.setItem("seenNotice", "true");
+});
+
+if (update === 1) {
+  const seenUpdate = localStorage.getItem("seenNotice");
+  if (!seenUpdate) {
+    updatePopup.classList.remove("hidden");
+  } else {
+    updatePopup.classList.add("hidden");
+  }
+} else {
+  localStorage.setItem("seenNotice", "");
+}
 
 // Define fetchIcalFeed globally
 function fetchIcalFeed() {
@@ -1138,6 +1157,7 @@ function clearPlansIfSunday() {
     if (today.getDay() === 0) {
       // It's Sunday (0), clear saved plans
       localStorage.removeItem("studyPlans");
+      update = 0; // Reset update counter
       console.debug("[studyPlans] Cleared studyPlans on Sunday.");
     }
   } catch (err) {
