@@ -1,6 +1,6 @@
 //function to check if user has seen the update notice.
 //if there is an update, change the value of update to 1.
-let update = 1; // Simulated update flag
+/*let update = 1; 
 const updatePopup = document.getElementById("updatePopup");
 const closeUpdateBtn = document.getElementById("closeUpdateBtn");
 
@@ -18,7 +18,7 @@ if (update === 1) {
   }
 } else {
   localStorage.setItem("seenNotice", "");
-}
+}*/
 
 // Define fetchIcalFeed globally
 function fetchIcalFeed() {
