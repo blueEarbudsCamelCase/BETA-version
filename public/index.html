@@ -86,6 +86,17 @@
             <div id="scheduleFormPanel">
                 <h2 class="text-2xl font-bold mb-6">Set Up Your Schedule</h2>
                 <form id="scheduleTableForm">
+                  <!-- Zoom suggestion banner: shown when some schedule UI elements are out of viewport -->
+                  <div id="scheduleZoomBanner" class="hidden bg-yellow-100 border-l-4 border-yellow-400 text-yellow-700 p-3 mb-3 rounded flex items-center justify-between" role="alert" aria-live="polite">
+                    <div>
+                      <strong class="font-semibold">Heads up:</strong>
+                      <span id="scheduleZoomBannerText">Some controls may be off-screen. Try zooming out for the best experience.</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                      <button id="scheduleAutoZoomBtn" type="button" class="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700">Auto Zoom</button>
+                      <button id="scheduleDismissZoomBtn" type="button" class="bg-white border px-3 py-1 rounded hover:bg-gray-100">Dismiss</button>
+                    </div>
+                  </div>
                   <table class="w-full mb-6 table-auto">
                     <thead>
                       <tr>

@@ -2002,6 +2002,156 @@ document.addEventListener("DOMContentLoaded", () => {
   addScheduleInputListeners();
   updateScheduleFormLabels();
 
+  // Zoom helpers: set/reset page zoom using multiple strategies (non-standard behavior)
+  function setPageZoom(percentage) {
+    try {
+      // Try non-standard style.zoom first (works in many browsers)
+      document.body.style.zoom = percentage;
+      // Store applied zoom in localStorage for persistence if desired
+      localStorage.setItem('userZoom', percentage);
+      return true;
+    } catch (e) {
+      // ignore fallthrough
+    }
+
+    try {
+      // Fallback: apply CSS transform scale with transform-origin top-left
+      const scale = parseFloat(String(percentage).replace('%', '')) / 100;
+      if (Number.isFinite(scale) && scale > 0) {
+        document.body.style.transform = `scale(${scale})`;
+        document.body.style.transformOrigin = '0 0';
+        // Compensate for the transform by increasing the width of the html element
+        document.documentElement.style.width = `${(100 / scale).toFixed(4)}%`;
+        localStorage.setItem('userZoom', percentage);
+        return true;
+      }
+    } catch (e) {
+      // ignore
+    }
+    return false;
+  }
+
+  function resetPageZoom() {
+    try { document.body.style.zoom = ''; } catch (e) { }
+    try { document.body.style.transform = ''; } catch (e) { }
+    try { document.body.style.transformOrigin = ''; } catch (e) { }
+    try { document.documentElement.style.width = ''; } catch (e) { }
+    localStorage.removeItem('userZoom');
+  }
+
+  // Return true if element is fully in the viewport
+  function isElementFullyInViewport(el) {
+    if (!el) return false;
+    const rect = el.getBoundingClientRect();
+    return rect.top >= 0 && rect.left >= 0 && rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) && rect.right <= (window.innerWidth || document.documentElement.clientWidth);
+  }
+
+  // Apply an 80% zoom automatically only if the Save Schedule button isn't visible
+  function applyAutoZoomIfNeeded() {
+    // Do not auto-zoom on mobile devices; check via userAgent or viewport size
+    const isMobile = /Mobi|Android/i.test(navigator.userAgent) || Math.max(window.innerWidth, window.innerHeight) < 600;
+    if (isMobile) return;
+
+    const saveBtn = document.getElementById('saveScheduleBtn');
+    if (!saveBtn) return;
+
+    // Respect user's choice to opt out
+    if (localStorage.getItem('autoZoomDisabled') === 'true') return;
+
+    // If save button is not fully visible, attempt to apply 80% zoom
+    if (!isElementFullyInViewport(saveBtn)) {
+      // Apply the zoom but keep a record so the user can revert
+      const applied = setPageZoom('80%');
+      if (!applied) {
+        // If we couldn't programmatically zoom, show banner prompting the user to zoom out
+        showScheduleZoomBanner();
+      } else {
+        // applied zoom: hide banner if present
+        hideScheduleZoomBanner();
+      }
+    }
+  }
+
+  // Create show/hide for the zoom banner and wire up its buttons
+  function showScheduleZoomBanner() {
+    const banner = document.getElementById('scheduleZoomBanner');
+    if (!banner) return;
+    banner.classList.remove('hidden');
+    const autoBtn = document.getElementById('scheduleAutoZoomBtn');
+    const dismissBtn = document.getElementById('scheduleDismissZoomBtn');
+    if (autoBtn) {
+      autoBtn.onclick = () => {
+        const applied = setPageZoom('80%');
+        if (applied) {
+          banner.classList.add('hidden');
+        } else {
+          banner.classList.add('hidden');
+        }
+      };
+    }
+    if (dismissBtn) {
+      dismissBtn.onclick = () => {
+        banner.classList.add('hidden');
+        localStorage.setItem('autoZoomDisabled', 'true');
+      };
+    }
+  }
+
+  function hideScheduleZoomBanner() {
+    const banner = document.getElementById('scheduleZoomBanner');
+    if (!banner) return;
+    banner.classList.add('hidden');
+  }
+
+  // Reset Zoom button in the settings popup for convenience
+  const resetZoomBtn = document.createElement('button');
+  resetZoomBtn.id = 'resetZoomBtn';
+  resetZoomBtn.className = 'bg-gray-100 text-gray-800 px-3 py-2 rounded hover:bg-gray-200';
+  resetZoomBtn.textContent = 'Reset Zoom';
+  // Append to settings popup footer if it exists
+  (function addResetZoomToSettings(){
+    const settingsPopupInner = document.querySelector('#settingsPopup .bg-white');
+    if (!settingsPopupInner) return;
+    const footer = settingsPopupInner.querySelector('.flex.justify-end');
+    if (footer) {
+      footer.insertBefore(resetZoomBtn, footer.firstChild);
+    } else {
+      settingsPopupInner.appendChild(resetZoomBtn);
+    }
+  })();
+  resetZoomBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    resetPageZoom();
+    localStorage.setItem('autoZoomDisabled', 'true');
+    alert('Page zoom reset to 100% and auto-zoom disabled.');
+  });
+
+  // When schedule form is toggled to visible, check if auto-zoom is needed
+  function scheduleFormVisibilityObserver() {
+    const formPanel = document.getElementById('scheduleFormPanel');
+    if (!formPanel) return;
+    const observer = new MutationObserver(() => {
+      if (!formPanel.classList.contains('hidden')) {
+        // It became visible
+        setTimeout(() => applyAutoZoomIfNeeded(), 50);
+      }
+    });
+    observer.observe(formPanel, { attributes: true, attributeFilter: ['class'] });
+  }
+
+  // Run the zoom check at initial load: if schedule panel exists and is visible
+  (function initScheduleZoomHandling(){
+    try {
+      scheduleFormVisibilityObserver();
+      const formPanel = document.getElementById('scheduleFormPanel');
+      if (formPanel && !formPanel.classList.contains('hidden')) {
+        applyAutoZoomIfNeeded();
+      }
+    } catch (err) {
+      console.error('[schedule] initScheduleZoomHandling error:', err);
+    }
+  })();
+
 
   // Wire Save button in schedule form
   const saveScheduleBtn = document.getElementById('saveScheduleBtn');

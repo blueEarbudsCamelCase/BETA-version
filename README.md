@@ -1,3 +1,7 @@
+Auto-zoom behaviour
+- The app attempts to auto-zoom the page to 80% if the "Save Schedule" button is not visible in the schedule setup form; this is a best-effort change and works in many browsers using non-standard APIs.
+- If auto-zoom cannot be applied, the UI will show a small banner on the schedule setup panel prompting users to zoom out with an "Auto Zoom" button to apply it manually or a "Dismiss" button to opt out.
+- If you want to reset zoom, open Settings and click the new "Reset Zoom" button. This disables any further auto-zoom attempts until you clear browser local storage for the site.
 # BETA-version
 
 This repository contains a small frontend and a proxy server used to fetch iCal
