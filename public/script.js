@@ -944,36 +944,33 @@ function updateRunScreenDisplay(taskIndex) {
   runScreenTasks.innerHTML = `
     <div class="current-task">
       <h2 class="font-bold text-lg mb-2">Current Task</h2>
-      ${
-        currentTask
-          ? `<div class="p-4 rounded shadow-md mb-4" style="background-color: ${getTaskZoneColor(
-              currentTask.zone,
-            )};">
+      ${currentTask
+      ? `<div class="p-4 rounded shadow-md mb-4" style="background-color: ${getTaskZoneColor(
+        currentTask.zone,
+      )};">
                 <input type="checkbox" id="currentTaskCheckbox" class="mr-2">
-                <label for="currentTaskCheckbox">${currentTask.summary} - ${
-                  currentTask.estimatedTime
-                } min.</label>
+                <label for="currentTaskCheckbox">${currentTask.summary} - ${currentTask.estimatedTime
+      } min.</label>
               </div>`
-          : `<p class="text-gray-500 italic">No current task.</p>`
-      }
+      : `<p class="text-gray-500 italic">No current task.</p>`
+    }
     </div>
     <div class="upcoming-tasks">
       <h2 class="font-bold text-lg mb-2">Upcoming Tasks</h2>
-      ${
-        upcomingTasks.length > 0
-          ? upcomingTasks
-              .map(
-                (task) => `
+      ${upcomingTasks.length > 0
+      ? upcomingTasks
+        .map(
+          (task) => `
                 <div class="p-4 rounded shadow-md mb-2" style="background-color: ${getTaskZoneColor(
-                  task.zone,
-                )};">
+            task.zone,
+          )};">
                   <label>${task.summary} - ${task.estimatedTime} min.</label>
                 </div>
               `,
-              )
-              .join("")
-          : `<p class="text-gray-500 italic">No upcoming tasks.</p>`
-      }
+        )
+        .join("")
+      : `<p class="text-gray-500 italic">No upcoming tasks.</p>`
+    }
     </div>
   `;
 
@@ -1484,9 +1481,8 @@ function updateMinutesLeftDisplay() {
     0,
   );
   const minutesLeft = Math.max(60 - totalMinutes, 0);
-  minutesLeftDisplay.textContent = `${minutesLeft} minute${
-    minutesLeft === 1 ? "" : "s"
-  } left to plan.`;
+  minutesLeftDisplay.textContent = `${minutesLeft} minute${minutesLeft === 1 ? "" : "s"
+    } left to plan.`;
 }
 
 const gradeSelect = document.getElementById("gradeSelect");
@@ -1665,9 +1661,14 @@ document.addEventListener("DOMContentLoaded", () => {
     refreshStudyTasksBtn.onclick = () => {
       refreshStudyTasksBtn.classList.add("fa-spin");
 
+      // Clear saved study plans
+      localStorage.removeItem("studyPlans");
+      console.debug("[refreshStudyTasksBtn] Cleared studyPlans from localStorage");
+
       fetchIcalFeed()
         .then(() => {
           loadStudyTasks();
+          applyScheduleOverlays();
           setTimeout(
             () => refreshStudyTasksBtn.classList.remove("fa-spin"),
             500,
@@ -1693,11 +1694,6 @@ document.addEventListener("DOMContentLoaded", () => {
     startStudyBtn.classList.add("hidden");
   }
 
-  // Hide the old Start button — scheduling replaces it
-  if (startStudyBtn) {
-    startStudyBtn.classList.add("hidden");
-  }
-
   // Clear saved plans on Sunday
   !(
     // Weekly clearing and sanitization
@@ -1709,10 +1705,6 @@ document.addEventListener("DOMContentLoaded", () => {
   renderDashboardTasks();
   loadStudyTasks();
   updateMinutesLeftDisplay(); // Initialize the minutes display
-
-  // Ensure schedule form labels updated and then attach cell handlers (so they open planner)
-  updateScheduleFormLabels();
-  attachScheduleCellHandlers();
 
   // Ensure schedule form labels updated and then attach cell handlers (so they open planner)
   updateScheduleFormLabels();
@@ -2145,16 +2137,16 @@ document.addEventListener("DOMContentLoaded", () => {
   function resetPageZoom() {
     try {
       document.body.style.zoom = "";
-    } catch (e) {}
+    } catch (e) { }
     try {
       document.body.style.transform = "";
-    } catch (e) {}
+    } catch (e) { }
     try {
       document.body.style.transformOrigin = "";
-    } catch (e) {}
+    } catch (e) { }
     try {
       document.documentElement.style.width = "";
-    } catch (e) {}
+    } catch (e) { }
     localStorage.removeItem("userZoom");
   }
 
@@ -2166,7 +2158,7 @@ document.addEventListener("DOMContentLoaded", () => {
       rect.top >= 0 &&
       rect.left >= 0 &&
       rect.bottom <=
-        (window.innerHeight || document.documentElement.clientHeight) &&
+      (window.innerHeight || document.documentElement.clientHeight) &&
       rect.right <= (window.innerWidth || document.documentElement.clientWidth)
     );
   }
@@ -2520,9 +2512,8 @@ function openEditTaskPopup(task) {
       taskElements.forEach((el) => {
         const summarySpan = el.querySelector("span");
         if (summarySpan)
-          summarySpan.textContent = `${newTitle} - ${
-            el.dataset.estimatedTime || ""
-          } min.`;
+          summarySpan.textContent = `${newTitle} - ${el.dataset.estimatedTime || ""
+            } min.`;
       });
     } else {
       // If not a custom task, update editedIcalTasks
@@ -2538,9 +2529,8 @@ function openEditTaskPopup(task) {
       taskElements.forEach((el) => {
         const summarySpan = el.querySelector("span");
         if (summarySpan)
-          summarySpan.textContent = `${newTitle} - ${
-            el.dataset.estimatedTime || ""
-          } min.`;
+          summarySpan.textContent = `${newTitle} - ${el.dataset.estimatedTime || ""
+            } min.`;
       });
     }
 
